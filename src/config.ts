@@ -4,6 +4,9 @@ export const TILE = 32;
 export const GAME_WIDTH = 960;
 export const GAME_HEIGHT = 540;
 
+/** Gravity in px/s² (physics spec). */
+export const GRAVITY = 1200;
+
 /** Fixed step of game logic and physics, in ms (debug spec). */
 export const STEP_MS = 1000 / 60;
 export const PHYSICS_FPS = 60;

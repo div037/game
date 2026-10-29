@@ -9,23 +9,34 @@ export const SPACE_LOCK_MS = 500;
  */
 export abstract class ScreenScene extends Phaser.Scene {
   protected elapsed = 0;
-  private spaceKey!: Phaser.Input.Keyboard.Key;
+  private spacePressed = false;
 
   create(): void {
     this.elapsed = 0;
+    this.spacePressed = false;
     const keyboard = this.input.keyboard;
     if (!keyboard) {
       throw new Error("Keyboard input is not available");
     }
-    this.spaceKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    // Drop a press that happened before this screen appeared.
-    Phaser.Input.Keyboard.JustDown(this.spaceKey);
+    // A keydown event is remembered until the next step, so even a press
+    // shorter than one step counts. Presses before this screen appeared
+    // are not seen: the listener starts here.
+    const onSpace = (event: KeyboardEvent) => {
+      if (!event.repeat) {
+        this.spacePressed = true;
+      }
+    };
+    keyboard.on("keydown-SPACE", onSpace);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      keyboard.off("keydown-SPACE", onSpace);
+    });
     this.build();
   }
 
   update(_time: number, delta: number): void {
     this.elapsed += delta;
-    const pressed = Phaser.Input.Keyboard.JustDown(this.spaceKey);
+    const pressed = this.spacePressed;
+    this.spacePressed = false;
     if (pressed && this.elapsed >= SPACE_LOCK_MS) {
       this.next();
     }

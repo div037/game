@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GAME_HEIGHT, GAME_WIDTH, PHYSICS_FPS } from "./config";
+import { GAME_HEIGHT, GAME_WIDTH, GRAVITY, PHYSICS_FPS } from "./config";
 import { debugEnabled, installHook } from "./debug/hook";
 import { BootScene } from "./scenes/BootScene";
 import { GameOverScene } from "./scenes/GameOverScene";
@@ -7,9 +7,6 @@ import { GameScene } from "./scenes/GameScene";
 import { HudScene } from "./scenes/HudScene";
 import { LevelCompleteScene } from "./scenes/LevelCompleteScene";
 import { TitleScene } from "./scenes/TitleScene";
-
-/** Gravity in px/s² (physics spec). */
-export const GRAVITY = 1200;
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

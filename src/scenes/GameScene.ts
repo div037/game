@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GAME_HEIGHT, GAME_WIDTH, TILE } from "../config";
+import { GAME_HEIGHT, STEP_MS, TILE } from "../config";
 import type { CameraState, LevelState, PlayerState } from "../debug/types";
 import {
   objectsOfType,
@@ -21,7 +21,7 @@ import type { LevelCompleteData } from "./LevelCompleteScene";
 export const START_HEARTS = 3;
 export const PIT_HEARTS_LOST = 1;
 export const RESPAWN_MS = 500;
-export const CAMERA_BAND_WIDTH = 6 * TILE;
+export const RESPAWN_STEPS = Math.round(RESPAWN_MS / STEP_MS);
 
 export interface GameSceneData {
   level: LevelData;
@@ -30,12 +30,11 @@ export interface GameSceneData {
 interface Keys {
   left: Phaser.Input.Keyboard.Key;
   right: Phaser.Input.Keyboard.Key;
-  up: Phaser.Input.Keyboard.Key;
   a: Phaser.Input.Keyboard.Key;
   d: Phaser.Input.Keyboard.Key;
-  w: Phaser.Input.Keyboard.Key;
-  space: Phaser.Input.Keyboard.Key;
 }
+
+const JUMP_EVENTS = ["keydown-SPACE", "keydown-UP", "keydown-W"];
 
 export class GameScene extends Phaser.Scene {
   hearts = START_HEARTS;
@@ -46,7 +45,8 @@ export class GameScene extends Phaser.Scene {
   private coinsTotal = 0;
   private save: SaveData = { coins: 0, collected: {} };
   private start!: LevelObject;
-  private respawnLeft: number | null = null;
+  private respawnStepsLeft: number | null = null;
+  private jumpPressed = false;
   private finished = false;
 
   constructor() {
@@ -59,7 +59,8 @@ export class GameScene extends Phaser.Scene {
     }
     this.level = data.level;
     this.hearts = START_HEARTS;
-    this.respawnLeft = null;
+    this.respawnStepsLeft = null;
+    this.jumpPressed = false;
     this.finished = false;
   }
 
@@ -110,10 +111,10 @@ export class GameScene extends Phaser.Scene {
     const camera = this.cameras.main;
     camera.setBounds(0, 0, widthPx, heightPx);
     camera.startFollow(this.player, true, 1, 1);
-    // The player may move inside a 6-tile band without scrolling. The band
-    // is as tall as the screen so a level of 17 tiles does not scroll
-    // vertically.
-    camera.setDeadzone(CAMERA_BAND_WIDTH, GAME_HEIGHT);
+    // The camera keeps the player centered horizontally (well inside the
+    // 6-tile band of the levels spec) and never scrolls vertically unless
+    // the player leaves the screen, so a level of 17 tiles shows its top.
+    camera.setDeadzone(0, GAME_HEIGHT);
     // startFollow snaps the camera to the player and clamps to the bounds,
     // which scrolls a 17-tile level down by 4 px; show the top instead.
     camera.setScroll(camera.scrollX, 0);
@@ -127,12 +128,24 @@ export class GameScene extends Phaser.Scene {
     this.keys = {
       left: keyboard.addKey(codes.LEFT),
       right: keyboard.addKey(codes.RIGHT),
-      up: keyboard.addKey(codes.UP),
       a: keyboard.addKey(codes.A),
       d: keyboard.addKey(codes.D),
-      w: keyboard.addKey(codes.W),
-      space: keyboard.addKey(codes.SPACE),
     };
+    // Jump presses are remembered until the next step, so a tap shorter
+    // than one step still jumps.
+    const onJump = (event: KeyboardEvent) => {
+      if (!event.repeat) {
+        this.jumpPressed = true;
+      }
+    };
+    for (const name of JUMP_EVENTS) {
+      keyboard.on(name, onJump);
+    }
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      for (const name of JUMP_EVENTS) {
+        keyboard.off(name, onJump);
+      }
+    });
 
     // Input is read before the physics step of the same fixed step, so a
     // key held during step(n) moves the player for all n steps.
@@ -208,34 +221,34 @@ export class GameScene extends Phaser.Scene {
     this.player.setFlipX(false);
   }
 
+  /** Runs before the physics step: input and the respawn after a pit. */
   private readInput(): void {
-    const keys = this.keys;
-    // Read every key so that no "just down" flag survives to the next step.
-    const jumpSpace = Phaser.Input.Keyboard.JustDown(keys.space);
-    const jumpUp = Phaser.Input.Keyboard.JustDown(keys.up);
-    const jumpW = Phaser.Input.Keyboard.JustDown(keys.w);
-    if (this.finished || this.respawnLeft !== null) {
-      return;
-    }
-    this.player.control({
-      left: keys.left.isDown || keys.a.isDown,
-      right: keys.right.isDown || keys.d.isDown,
-      jump: jumpSpace || jumpUp || jumpW,
-    });
-  }
-
-  update(_time: number, delta: number): void {
+    const jump = this.jumpPressed;
+    this.jumpPressed = false;
     if (this.finished) {
       return;
     }
-    if (this.respawnLeft !== null) {
-      this.respawnLeft -= delta;
-      if (this.respawnLeft <= 0) {
-        this.respawnLeft = null;
+    if (this.respawnStepsLeft !== null) {
+      this.respawnStepsLeft -= 1;
+      if (this.respawnStepsLeft <= 0) {
+        this.respawnStepsLeft = null;
         this.player.setVisible(true);
         this.player.arcadeBody().enable = true;
         this.placePlayerAtStart();
       }
+      return;
+    }
+    const keys = this.keys;
+    this.player.control({
+      left: keys.left.isDown || keys.a.isDown,
+      right: keys.right.isDown || keys.d.isDown,
+      jump,
+    });
+  }
+
+  /** Runs after the physics step. */
+  update(): void {
+    if (this.finished || this.respawnStepsLeft !== null) {
       return;
     }
     if (this.player.arcadeBody().top > this.level.heightTiles * TILE) {
@@ -254,7 +267,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setVisible(false);
     this.player.arcadeBody().stop();
     this.player.arcadeBody().enable = false;
-    this.respawnLeft = RESPAWN_MS;
+    this.respawnStepsLeft = RESPAWN_STEPS;
   }
 
   setPlayerPosition(x: number, y: number): void {
@@ -279,6 +292,4 @@ export class GameScene extends Phaser.Scene {
     const camera = this.cameras.main;
     return { x: camera.scrollX, y: camera.scrollY };
   }
-
-  static readonly viewWidth = GAME_WIDTH;
 }
