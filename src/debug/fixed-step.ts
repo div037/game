@@ -72,6 +72,12 @@ export class FixedStepLoop {
   private onFrame(delta: number): void {
     if (this._paused) {
       // Keep the picture fresh (e.g. after a resize) without advancing time.
+      // Key events were already dispatched; Phaser empties its queue only
+      // in a step, so do it here to keep the queue from growing.
+      const keyboard = this.game.input.keyboard as { queue?: unknown[] } | null;
+      if (keyboard?.queue) {
+        keyboard.queue = [];
+      }
       this.render();
       return;
     }

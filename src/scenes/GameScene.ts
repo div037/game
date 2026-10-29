@@ -11,6 +11,7 @@ import { Player } from "../player/Player";
 import {
   collectCoin,
   collectedIn,
+  gameStorage,
   loadSave,
   writeSave,
   type SaveData,
@@ -66,7 +67,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     const level = this.level;
-    this.save = loadSave(window.localStorage);
+    this.save = loadSave(gameStorage());
     this.registry.set("coins", this.save.coins);
     this.registry.set("hearts", this.hearts);
 
@@ -131,6 +132,8 @@ export class GameScene extends Phaser.Scene {
       a: keyboard.addKey(codes.A),
       d: keyboard.addKey(codes.D),
     };
+    // Jump keys must not scroll an embedding page.
+    keyboard.addCapture([codes.SPACE, codes.UP, codes.W]);
     // Jump presses are remembered until the next step, so a tap shorter
     // than one step still jumps.
     const onJump = (event: KeyboardEvent) => {
@@ -194,8 +197,9 @@ export class GameScene extends Phaser.Scene {
     }
     const id = Number(coin.getData("id"));
     coin.destroy();
-    this.save = collectCoin(this.save, this.level.id, id);
-    writeSave(window.localStorage, this.save);
+    // Re-read the save: resetSave() may have cleared it during the level.
+    this.save = collectCoin(loadSave(gameStorage()), this.level.id, id);
+    writeSave(gameStorage(), this.save);
     this.registry.set("coins", this.save.coins);
   }
 

@@ -27,9 +27,9 @@ Gra działa pod adresem, który wypisze Vite (domyślnie
 testy gry w przeglądarce (Playwright, serwer deweloperski startuje sam).
 Playwright ma trzy projekty: Chromium, Firefox i WebKit; zmienna
 `PW_BROWSERS` ogranicza je, np. `PW_BROWSERS=chromium npm run test:e2e`
-(w sesjach w chmurze działa tylko Chromium). Testy `DEBUG-HOOK-02` i
-`DEBUG-HOOK-03` wymagają wcześniejszego `npm run build`. `npm test` uruchamia
-oba zestawy.
+(w sesjach w chmurze działa tylko Chromium). Playwright uruchamia też drugi
+serwer (`npm run build` i `vite preview` na porcie 4173) dla testów buildu
+produkcyjnego. `npm test` uruchamia oba zestawy.
 
 Hak testowy `window.__game` (opis w specyfikacji `debug` w prywatnym
 repozytorium) jest dostępny na serwerze deweloperskim i w buildzie z

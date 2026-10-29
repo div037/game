@@ -80,8 +80,9 @@ test("UI-VERSION-01 Wersja w rogu", async ({ page }) => {
   const state = await readState(page);
   const version = state.texts.find((t) => t.text === `v${pkg.version}`);
   expect(version).toBeDefined();
-  expect(version!.x).toBeGreaterThan(480);
-  expect(version!.y).toBeGreaterThan(270);
+  // Bottom-right corner of the 960 x 540 screen.
+  expect(version!.x).toBeGreaterThan(960 - 120);
+  expect(version!.y).toBeGreaterThan(540 - 40);
 });
 
 test("UI-HUD-COINS-01 Pierwsza gra", async ({ page }) => {

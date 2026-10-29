@@ -58,8 +58,11 @@ test("DEBUG-STATE-05 Widoczne napisy", async ({ page }) => {
     expect(typeof entry.x).toBe("number");
     expect(typeof entry.y).toBe("number");
   }
-  // The title screen texts are gone: only the level's texts are listed.
-  expect(texts.map((entry) => entry.text)).not.toContain("Platformówka");
+  // The title screen texts are gone: only the level's texts are listed,
+  // among them the HUD coin counter.
+  const shown = texts.map((entry) => entry.text);
+  expect(shown).not.toContain("Platformówka");
+  expect(shown).toContain("0");
 });
 
 test("DEBUG-LOAD-LEVEL-01 Poziom testowy z ekranu startowego", async ({

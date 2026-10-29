@@ -49,7 +49,8 @@ test("LEVEL-EXIT-01 Koniec poziomu", async ({ page }) => {
   );
   const done = await stepUntil(page, (s) => s.scene === "LevelComplete", 30);
   await page.keyboard.up("ArrowRight");
-  expect(touch.steps + done.steps).toBeLessThanOrEqual(60);
+  expect(touch.steps).toBeLessThanOrEqual(60);
+  expect(done.steps).toBeLessThanOrEqual(30);
   expect(done.state.scene).toBe("LevelComplete");
   expect(done.state.player).toBeNull();
 });

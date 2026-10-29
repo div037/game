@@ -10,10 +10,23 @@ export function levelPath(id: string): string {
   return `../../levels/${id}.json`;
 }
 
+const cache = new Map<string, LevelData>();
+
+/** A level that was loaded before, without waiting; null otherwise. */
+export function cachedLevelData(id: string): LevelData | null {
+  return cache.get(id) ?? null;
+}
+
 export async function loadLevelData(id: string): Promise<LevelData> {
+  const cached = cache.get(id);
+  if (cached) {
+    return cached;
+  }
   const load = levelModules[levelPath(id)];
   if (!load) {
     throw new Error(`Unknown level "${id}"`);
   }
-  return parseLevel(id, await load());
+  const level = parseLevel(id, await load());
+  cache.set(id, level);
+  return level;
 }

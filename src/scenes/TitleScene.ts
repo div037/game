@@ -1,5 +1,5 @@
 import { FIRST_LEVEL, PRESS_SPACE_TEXT, TITLE_TEXT } from "../config";
-import { loadLevelData } from "../levels/level-loader";
+import { cachedLevelData, loadLevelData } from "../levels/level-loader";
 import { ScreenScene } from "./ScreenScene";
 
 /** The prompt toggles every BLINK_MS of game time (ui spec). */
@@ -40,10 +40,20 @@ export class TitleScene extends ScreenScene {
       return;
     }
     this.starting = true;
-    void loadLevelData(FIRST_LEVEL).then((level) => {
-      if (this.scene.isActive()) {
-        this.scene.start("Game", { level });
-      }
-    });
+    const cached = cachedLevelData(FIRST_LEVEL);
+    if (cached) {
+      this.scene.start("Game", { level: cached });
+      return;
+    }
+    loadLevelData(FIRST_LEVEL)
+      .then((level) => {
+        if (this.scene.isActive()) {
+          this.scene.start("Game", { level });
+        }
+      })
+      .catch((error: unknown) => {
+        this.starting = false;
+        console.error(`Could not load level ${FIRST_LEVEL}`, error);
+      });
   }
 }

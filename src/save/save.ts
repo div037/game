@@ -14,6 +14,59 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
+/** In-memory fallback when the browser blocks localStorage. */
+class MemoryStorage implements StorageLike {
+  private items = new Map<string, string>();
+  getItem(key: string): string | null {
+    return this.items.get(key) ?? null;
+  }
+  setItem(key: string, value: string): void {
+    this.items.set(key, value);
+  }
+  removeItem(key: string): void {
+    this.items.delete(key);
+  }
+}
+
+let fallback: StorageLike | null = null;
+
+/**
+ * The browser's localStorage, or an in-memory stand-in when access throws
+ * (private mode, blocked storage, sandboxed frames). Every call is guarded
+ * so a storage error never stops the game loop.
+ */
+export function gameStorage(): StorageLike {
+  const memory = (): StorageLike => (fallback ??= new MemoryStorage());
+  try {
+    const storage = window.localStorage;
+    return {
+      getItem(key) {
+        try {
+          return storage.getItem(key);
+        } catch {
+          return memory().getItem(key);
+        }
+      },
+      setItem(key, value) {
+        try {
+          storage.setItem(key, value);
+        } catch {
+          memory().setItem(key, value);
+        }
+      },
+      removeItem(key) {
+        try {
+          storage.removeItem(key);
+        } catch {
+          memory().removeItem(key);
+        }
+      },
+    };
+  } catch {
+    return memory();
+  }
+}
+
 export function emptySave(): SaveData {
   return { coins: 0, collected: {} };
 }

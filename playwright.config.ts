@@ -33,6 +33,9 @@ const deviceFor: Record<Browser, (typeof devices)[string]> = {
 
 const port = 5173;
 export const baseURL = `http://localhost:${port}/game/`;
+/** `vite preview` of a fresh production build, for the DEBUG-HOOK tests. */
+export const previewPort = 4173;
+export const previewURL = `http://localhost:${previewPort}/game/`;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -51,10 +54,18 @@ export default defineConfig({
     name,
     use: { ...deviceFor[name] },
   })),
-  webServer: {
-    command: `npm run dev -- --port ${port} --strictPort`,
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: `npm run dev -- --port ${port} --strictPort`,
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    {
+      command: `npm run build && npm run preview -- --port ${previewPort} --strictPort`,
+      url: previewURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 });

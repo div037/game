@@ -11,7 +11,7 @@ import type {
 } from "./types";
 import { FixedStepLoop } from "./fixed-step";
 import { loadLevelData } from "../levels/level-loader";
-import { resetSave } from "../save/save";
+import { gameStorage, resetSave } from "../save/save";
 import { GameScene } from "../scenes/GameScene";
 import { HudScene } from "../scenes/HudScene";
 import { installDebugKey } from "./download";
@@ -65,6 +65,9 @@ export function installHook(game: Phaser.Game, version: string): GameHook {
   const texts = (): TextState[] => {
     const result: TextState[] = [];
     for (const scene of game.scene.getScenes(true)) {
+      if (!scene.sys.settings.visible) {
+        continue;
+      }
       const camera = scene.cameras.main;
       for (const child of scene.children.list) {
         if (!(child instanceof Phaser.GameObjects.Text)) {
@@ -99,12 +102,27 @@ export function installHook(game: Phaser.Game, version: string): GameHook {
     };
   };
 
+  const LOAD_TIMEOUT_MS = 5000;
+
   const waitForGameScene = (): Promise<void> =>
-    new Promise((resolve) => {
+    new Promise((resolve, reject) => {
       const scene = game.scene.getScene("Game");
-      scene.events.once(Phaser.Scenes.Events.CREATE, () => resolve());
+      const onCreate = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      const timer = setTimeout(() => {
+        scene.events.off(Phaser.Scenes.Events.CREATE, onCreate);
+        reject(new Error("The Game scene did not start (see the console)"));
+      }, LOAD_TIMEOUT_MS);
+      scene.events.once(Phaser.Scenes.Events.CREATE, onCreate);
     });
 
+  /**
+   * Runs `steps` game steps: at once when paused, otherwise by waiting for
+   * the real-time loop (and finishing with explicit steps if the loop gets
+   * paused meanwhile).
+   */
   const advance = (steps: number): Promise<void> => {
     if (loop.paused) {
       loop.step(steps);
@@ -112,13 +130,23 @@ export function installHook(game: Phaser.Game, version: string): GameHook {
     }
     return new Promise((resolve) => {
       let left = steps;
+      const finish = () => {
+        game.events.off(Phaser.Core.Events.POST_STEP, onStep);
+        clearInterval(watchdog);
+        resolve();
+      };
       const onStep = () => {
         left -= 1;
         if (left <= 0) {
-          game.events.off(Phaser.Core.Events.POST_STEP, onStep);
-          resolve();
+          finish();
         }
       };
+      const watchdog = setInterval(() => {
+        if (loop.paused) {
+          loop.step(left);
+          finish();
+        }
+      }, 50);
       game.events.on(Phaser.Core.Events.POST_STEP, onStep);
     });
   };
@@ -209,7 +237,7 @@ export function installHook(game: Phaser.Game, version: string): GameHook {
       scene.setPlayerPosition(x, y);
     },
     resetSave() {
-      resetSave(window.localStorage);
+      resetSave(gameStorage());
       game.registry.set("coins", 0);
     },
     snapshot,
