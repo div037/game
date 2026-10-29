@@ -1,0 +1,31 @@
+{
+  "version": "0.2",
+  "language": "en-US",
+  "files": [
+    "src/**",
+    "tests/**",
+    "scripts/**",
+    ".github/**",
+    "index.html",
+    "*.{json,js,mjs,ts,yml,yaml}"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "package-lock.json",
+    ".worktrees",
+    "CLAUDE.md",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "words": [
+    "cspell",
+    "phaser",
+    "tilemap",
+    "tilemaps",
+    "tseslint",
+    "vitest",
+    "wersja",
+    "worktrees"
+  ]
+}
