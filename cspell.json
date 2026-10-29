@@ -19,13 +19,43 @@
     "CHANGELOG.md"
   ],
   "words": [
+    "IHDR",
+    "changedata",
+    "compressionlevel",
     "cspell",
+    "deadzone",
+    "draworder",
+    "firstgid",
+    "imageheight",
+    "imagewidth",
+    "nextlayerid",
+    "nextobjectid",
+    "objectgroup",
+    "openspec",
     "phaser",
+    "postrender",
+    "prerender",
+    "prestep",
+    "renderorder",
+    "tilecount",
+    "tiledversion",
+    "tileheight",
+    "tilelayer",
     "tilemap",
     "tilemaps",
+    "tileoffset",
+    "tileset",
+    "tilesets",
+    "tilewidth",
     "tseslint",
     "vitest",
     "wersja",
     "worktrees"
+  ],
+  "import": [
+    "@cspell/dict-pl_pl/cspell-ext.json"
+  ],
+  "dictionaries": [
+    "pl-pl"
   ]
 }

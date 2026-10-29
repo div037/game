@@ -17,8 +17,13 @@ export default defineConfig([
     },
   },
   {
-    files: ["vite.config.ts", "tests/**/*.mjs"],
-    languageOptions: { globals: globals.node },
+    files: [
+      "vite.config.ts",
+      "vitest.config.ts",
+      "playwright.config.ts",
+      "tests/**/*.{ts,mjs}",
+    ],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   eslintConfigPrettier,
 ]);
