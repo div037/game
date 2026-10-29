@@ -20,9 +20,20 @@ npm run dev
 Gra działa pod adresem, który wypisze Vite (domyślnie
 `http://localhost:5173/game/`).
 
-## Sprawdzenie i build
+## Sprawdzenie, testy i build
 
 `npm run check` uruchamia typecheck, lint, format:check i spell.
+`npm run test:unit` uruchamia testy jednostkowe (Vitest), a `npm run test:e2e`
+testy gry w przeglądarce (Playwright, serwer deweloperski startuje sam).
+Playwright ma trzy projekty: Chromium, Firefox i WebKit; zmienna
+`PW_BROWSERS` ogranicza je, np. `PW_BROWSERS=chromium npm run test:e2e`
+(w sesjach w chmurze działa tylko Chromium). Playwright uruchamia też drugi
+serwer (`npm run build` i `vite preview` na porcie 4173) dla testów buildu
+produkcyjnego. `npm test` uruchamia oba zestawy.
+
+Hak testowy `window.__game` (opis w specyfikacji `debug` w prywatnym
+repozytorium) jest dostępny na serwerze deweloperskim i w buildzie z
+parametrem `?debug=1`; klawisz F9 pobiera `debug-state.json` i zrzut ekranu.
 `npm run build` buduje grę do katalogu `dist/`. Build jest przygotowany pod
 GitHub Pages projektu (adres `/game/`); żeby serwować grę z katalogu
 głównego, utwórz plik `.env.local` z linią `VITE_BASE=/`.

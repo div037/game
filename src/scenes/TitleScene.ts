@@ -1,27 +1,59 @@
-import Phaser from "phaser";
+import { FIRST_LEVEL, PRESS_SPACE_TEXT, TITLE_TEXT } from "../config";
+import { cachedLevelData, loadLevelData } from "../levels/level-loader";
+import { ScreenScene } from "./ScreenScene";
 
-export class TitleScene extends Phaser.Scene {
+/** The prompt toggles every BLINK_MS of game time (ui spec). */
+export const BLINK_MS = 500;
+
+export class TitleScene extends ScreenScene {
+  private prompt!: Phaser.GameObjects.Text;
+  private starting = false;
+
   constructor() {
     super("Title");
   }
 
-  create(): void {
-    const centerX = this.scale.width / 2;
-
+  protected build(): void {
+    this.starting = false;
+    this.centeredText(200, TITLE_TEXT, 64);
+    this.prompt = this.centeredText(300, PRESS_SPACE_TEXT, 28, "#c2c3c7");
     this.add
-      .text(centerX, 240, "Gra", {
-        fontFamily: "sans-serif",
-        fontSize: "64px",
-        color: "#fff1e8",
-      })
-      .setOrigin(0.5);
+      .text(
+        this.scale.width - 16,
+        this.scale.height - 16,
+        `v${__APP_VERSION__}`,
+        {
+          fontFamily: "sans-serif",
+          fontSize: "20px",
+          color: "#c2c3c7",
+        },
+      )
+      .setOrigin(1, 1);
+  }
 
-    this.add
-      .text(centerX, 320, `wersja ${__APP_VERSION__}`, {
-        fontFamily: "sans-serif",
-        fontSize: "24px",
-        color: "#c2c3c7",
+  protected tick(): void {
+    this.prompt.setVisible(Math.floor(this.elapsed / BLINK_MS) % 2 === 0);
+  }
+
+  protected next(): void {
+    if (this.starting) {
+      return;
+    }
+    this.starting = true;
+    const cached = cachedLevelData(FIRST_LEVEL);
+    if (cached) {
+      this.scene.start("Game", { level: cached });
+      return;
+    }
+    loadLevelData(FIRST_LEVEL)
+      .then((level) => {
+        if (this.scene.isActive()) {
+          this.scene.start("Game", { level });
+        }
       })
-      .setOrigin(0.5);
+      .catch((error: unknown) => {
+        this.starting = false;
+        console.error(`Could not load level ${FIRST_LEVEL}`, error);
+      });
   }
 }
