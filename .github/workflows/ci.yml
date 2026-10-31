@@ -1,0 +1,120 @@
+# CI for every pull request, for pushes to main and as the test stage of
+# release.yml (workflow_call). The ruleset on main requires the single
+# "CI passed" check, which sums up all other jobs.
+name: CI
+
+on:
+  pull_request:
+    # "edited" re-runs CI when the PR description changes, so a fixed
+    # "Spec:" line turns the spec-line check green.
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Format
+        run: npm run format:check
+      - name: Spell
+        run: npm run spell
+      - name: Unit tests
+        run: npm run test:unit
+
+  e2e:
+    name: e2e (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      PW_BROWSERS: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install browser and system dependencies
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Playwright tests
+        run: npm run test:e2e
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  # D-35: a pull request from a change/* branch must start its description
+  # with "Spec: <name> <sha>", where <sha> is the 40 character commit in the
+  # private spec repository. A discipline check, not a proof. Other branches
+  # (platform/*, release/*, cloud sessions) skip this job, which counts as
+  # passed.
+  spec-line:
+    name: spec-line
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'change/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the Spec line in the PR description
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          first_line="$(printf '%s\n' "$PR_BODY" | head -n 1 | tr -d '\r')"
+          echo "First line: $first_line"
+          if [[ "$first_line" != "Spec: "* ]]; then
+            echo "::error::The PR description must start with 'Spec: <name> <sha>'."
+            exit 1
+          fi
+          if [[ ! "$first_line" =~ (^|[^0-9a-f])[0-9a-f]{40}($|[^0-9a-f]) ]]; then
+            echo "::error::The Spec line must contain a 40 character commit SHA."
+            exit 1
+          fi
+          echo "Spec line OK."
+
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [check, e2e, spec-line]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail when a required job failed or was cancelled
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *) echo "::error::A CI job ended with '$result'."; exit 1 ;;
+            esac
+          done

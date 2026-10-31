@@ -80,9 +80,12 @@ test("UI-VERSION-01 Wersja w rogu", async ({ page }) => {
   const state = await readState(page);
   const version = state.texts.find((t) => t.text === `v${pkg.version}`);
   expect(version).toBeDefined();
-  // Bottom-right corner of the 960 x 540 screen.
+  // Bottom-right corner of the 960 x 540 screen. The hook reports the top
+  // left corner; the text is anchored at its bottom right, so its top edge
+  // moves with the font's line height (23 px in Chromium, 24 px in Firefox
+  // and WebKit, more on some systems).
   expect(version!.x).toBeGreaterThan(960 - 120);
-  expect(version!.y).toBeGreaterThan(540 - 40);
+  expect(version!.y).toBeGreaterThan(540 - 60);
 });
 
 test("UI-HUD-COINS-01 Pierwsza gra", async ({ page }) => {

@@ -20,16 +20,19 @@
   ],
   "words": [
     "IHDR",
+    "anims",
     "changedata",
     "compressionlevel",
     "cspell",
     "deadzone",
     "draworder",
+    "esac",
     "firstgid",
     "imageheight",
     "imagewidth",
     "nextlayerid",
     "nextobjectid",
+    "nvmrc",
     "objectgroup",
     "openspec",
     "phaser",
@@ -37,6 +40,7 @@
     "prerender",
     "prestep",
     "renderorder",
+    "spritesheet",
     "tilecount",
     "tiledversion",
     "tileheight",
@@ -48,14 +52,12 @@
     "tilesets",
     "tilewidth",
     "tseslint",
+    "vite",
     "vitest",
     "wersja",
-    "worktrees"
+    "worktrees",
+    "yoyo"
   ],
-  "import": [
-    "@cspell/dict-pl_pl/cspell-ext.json"
-  ],
-  "dictionaries": [
-    "pl-pl"
-  ]
+  "import": ["@cspell/dict-pl_pl/cspell-ext.json"],
+  "dictionaries": ["pl-pl"]
 }
