@@ -23,10 +23,13 @@ export class FixedStepLoop {
     // Phaser installs its own callback in Game.start, after READY, so the
     // replacement happens inside the first frame. Phaser keeps handling
     // requestAnimationFrame and tab visibility; we decide how many fixed
-    // steps run per frame.
+    // steps run per frame. The delta Phaser passes is smoothed over 10
+    // frames and clamped to one 1/60 s step while the page is out of focus
+    // or cooling down, so a slow browser (headless WebKit in CI at about
+    // 20 fps) would fall behind real time. rawDelta is the real time since
+    // the last frame; the step cap in onFrame still guards long pauses.
     game.events.once("prestep", () => {
-      game.loop.callback = (_time: number, delta: number) =>
-        this.onFrame(delta);
+      game.loop.callback = () => this.onFrame(game.loop.rawDelta);
     });
   }
 
