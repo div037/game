@@ -17,6 +17,7 @@ import {
   type SaveData,
 } from "../save/save";
 import type { LevelCompleteData } from "./LevelCompleteScene";
+import { ANIM } from "./BootScene";
 
 // Numbers from the player and levels Tuning tables.
 export const START_HEARTS = 3;
@@ -173,25 +174,42 @@ export class GameScene extends Phaser.Scene {
         object.x + object.width / 2,
         object.y + object.height / 2,
         "coin",
-      ) as Phaser.Physics.Arcade.Image;
+      ) as Phaser.Physics.Arcade.Sprite;
       coin.setData("id", object.id);
+      coin.play(ANIM.coinSpin);
     }
     this.physics.add.overlap(this.player, this.coins, (_player, coin) => {
-      this.collect(coin as Phaser.Physics.Arcade.Image);
+      this.collect(coin as Phaser.Physics.Arcade.Sprite);
     });
   }
 
   private createPortal(level: LevelData): void {
     const object = singleObject(level, "exit-portal");
-    const portal = this.physics.add.staticImage(
+    // The picture: a stone arch drawn at 2x, standing on the floor and
+    // tinted blue (the level exit is a blue portal). The exit itself is an
+    // invisible zone the size of the map object.
+    this.add
+      .sprite(
+        object.x + object.width / 2,
+        object.y + object.height,
+        "portal",
+        8,
+      )
+      .setOrigin(0.5, 1)
+      .setScale(2)
+      .setTint(0x7fb0ff)
+      .play(ANIM.portalLoop);
+    const exit = this.add.zone(
       object.x + object.width / 2,
       object.y + object.height / 2,
-      "portal",
+      object.width,
+      object.height,
     );
-    this.physics.add.overlap(this.player, portal, () => this.finishLevel());
+    this.physics.add.existing(exit, true);
+    this.physics.add.overlap(this.player, exit, () => this.finishLevel());
   }
 
-  private collect(coin: Phaser.Physics.Arcade.Image): void {
+  private collect(coin: Phaser.Physics.Arcade.Sprite): void {
     if (!coin.active) {
       return;
     }
