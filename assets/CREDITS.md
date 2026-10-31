@@ -20,8 +20,13 @@ list every such copy below.
 
 ## Files used by the game
 
-The game still draws its graphics in code (`src/textures.ts`); nothing has
-been copied into `assets/images/` yet.
+Derived from the packs above: cropped, scaled 2x with nearest-neighbor
+sampling where the source is 16 px, and combined into sprite strips.
 
-| File | From pack | Author | License |
-| ---- | --------- | ------ | ------- |
+| File                                 | From pack                                                                                             | Author                        | License |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- | ----------------------------- | ------- |
+| assets/images/tiles/ruins.png        | classical-ruin-tiles (cells 5,11 and 3,9 and 22,2 and 26,13 of classical_ruin_tiles_1.png, scaled 2x) | surt (Carl Olsson)            | CC0 1.0 |
+| assets/images/player/hero-32x32.png  | jumping-blob (blob_stand1-3 and blob_jump1-4 as one strip)                                            | Jordan Irwin (AntumDeluge)    | CC0 1.0 |
+| assets/images/items/coin-32x32.png   | glax-old-platformer-assets (gold row of items/coins.png, scaled 2x)                                   | Glax (mattbas)                | CC0 1.0 |
+| assets/images/ui/heart.png           | pixel-hearts (full heart, trimmed to 16 x 16 and scaled 2x)                                           | TokyoGeisha and Nikita Sadkov | CC0 1.0 |
+| assets/images/items/portal-32x40.png | portals (portalRings1.png as is)                                                                      | letargicdev                   | CC0 1.0 |

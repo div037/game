@@ -16,7 +16,7 @@ export class HudScene extends Phaser.Scene {
 
   create(): void {
     this.coinIcon = this.add
-      .image(HUD_MARGIN, HUD_MARGIN, "coin")
+      .image(HUD_MARGIN, HUD_MARGIN, "coin", 0)
       .setOrigin(0, 0);
     this.coinText = this.add
       .text(HUD_MARGIN + HUD_ICON + 8, HUD_MARGIN + HUD_ICON / 2, "0", {

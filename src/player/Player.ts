@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { PlayerState } from "../debug/types";
+import { ANIM } from "../scenes/BootScene";
 
 // Numbers from the player and physics Tuning tables.
 export const RUN_SPEED = 96;
@@ -18,7 +19,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   facing: "left" | "right" = "right";
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, "hero");
+    super(scene, x, y, "hero", 0);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     const body = this.arcadeBody();
@@ -64,6 +65,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setFlipX(this.facing === "left");
     if (input.jump && this.onGround) {
       body.setVelocityY(-JUMP_SPEED);
+      this.play(ANIM.heroJump, true);
+    } else if (this.onGround) {
+      this.play(ANIM.heroIdle, true);
     }
   }
 
